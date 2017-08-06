@@ -1,0 +1,15 @@
+{
+  "name": "dr-captain",
+  "version": "0.0.1",
+  "description": "Collaboratively maintained live captioning",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Brook Riggio",
+  "license": "MIT",
+  "dependencies": {
+    "@google-cloud/speech": "^0.10.2",
+    "node-record-lpcm16": "^0.3.0"
+  }
+}
