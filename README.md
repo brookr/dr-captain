@@ -1,7 +1,7 @@
 # Doctor Captain
 Live captioning service, with crowd-sourced corrections.
 
-Transcription provided by Google Speech API. The source code is based on the streaming recognizer example they provide.  
+Transcription provided by Google Speech API. The source code is based on the streaming recognizer [example](https://github.com/GoogleCloudPlatform/nodejs-docs-samples/blob/master/speech/recognize.js) they provide.  
 
 ## Setup
 
