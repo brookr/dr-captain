@@ -13,8 +13,8 @@ Transcription provided by Google Speech API. The source code is based on the str
 
 ## Usage
 
-Start up the program, specifying the Google Doc you want to write to, and optionally the threshold for audio to be considered 'silence':
+Start up the program, specifying the Google Doc you want to write to, and optionally the threshold for audio to be considered 'silence' (scale: 0-1):
 
 ```
-  node app.js seattle-201d25-captions 0.05
+  node app.js seattle-201d25-captions 0.02
 ```

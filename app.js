@@ -1,4 +1,16 @@
-const listen = function() {
+const options = {
+  docName: process.argv[2],
+  encoding: 'LINEAR16', // The encoding of the audio file, e.g. 'LINEAR16'
+  languageCode: 'en-US', // The BCP-47 language code to use, e.g. 'en-US'
+  sampleRateHertz: 16000, // The sample rate of the audio file in hertz, e.g. 16000
+  // Other options, see https://www.npmjs.com/package/node-record-lpcm16#options
+  verbose: false,
+  recordProgram: 'rec', // Try also "arecord" or "sox"
+  silence: '1.0',
+  threshold: process.argv[3] || '0.01'
+}
+
+const listen = function(options) {
   const record = require('node-record-lpcm16');
 
   // Imports the Google Cloud client library
@@ -7,20 +19,11 @@ const listen = function() {
   // Instantiates a client
   const speech = Speech();
 
-  // The encoding of the audio file, e.g. 'LINEAR16'
-  const encoding = 'LINEAR16';
-
-  // The sample rate of the audio file in hertz, e.g. 16000
-  const sampleRateHertz = 16000;
-
-  // The BCP-47 language code to use, e.g. 'en-US'
-  const languageCode = 'en-US';
-
   const request = {
     config: {
-      encoding: encoding,
-      sampleRateHertz: sampleRateHertz,
-      languageCode: languageCode
+      encoding: options.encoding,
+      sampleRateHertz: options.sampleRateHertz,
+      languageCode: options.languageCode
     },
     interimResults: false // If you want interim results, set this to true
   };
@@ -35,6 +38,8 @@ const listen = function() {
       .on('data', (data) => {
           if (data.results[0] && data.results[0].alternatives[0]) {
             process.stdout.write(`Transcription: ${data.results[0].alternatives[0].transcript}\n`)
+            
+            // Now ship this out to the specified Google Doc
           }
           else {
             record.stop();
@@ -43,15 +48,7 @@ const listen = function() {
       });
   }
 
-  const options = {
-    sampleRateHertz: sampleRateHertz,
-    threshold: 0,
-    // Other options, see https://www.npmjs.com/package/node-record-lpcm16#options
-    verbose: false,
-    recordProgram: 'rec', // Try also "arecord" or "sox"
-    silence: '1.0',
-    threshold: '0.01'
-  }
+
 
   // Start recording and send the microphone input to the Speech API
   const start = function() {
@@ -66,4 +63,5 @@ const listen = function() {
   start(); 
 }
 
-listen();
+// Run it!
+listen(options);
