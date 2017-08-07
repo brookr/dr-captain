@@ -129,8 +129,8 @@ const speech = Speech();
 const recognizeStreamCreate = function () {
   return speech.streamingRecognize(options.request)
     .on('error', (err) => {
-      // console.error(err);
-      // console.log("\n\nDisregarding error and restarting stream...\n\n")
+      console.error(err);
+      console.log("\n\nDisregarding error and restarting stream...\n\n")
     })
     .on('data', (data, record) => {
       options.middleware.forEach(f => f(data, record))
