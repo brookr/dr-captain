@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "@google-cloud/speech": "^0.10.2",
+    "googleapis": "^20.1.0",
     "node-record-lpcm16": "^0.3.0"
   }
 }

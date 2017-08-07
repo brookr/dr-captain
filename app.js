@@ -1,6 +1,5 @@
-
-const logTranscript = function(data, record) {
-  console.log(data)
+// Configure recording
+const logTranscript = function (data, record) {
   if (data.results[0] && data.results[0].alternatives[0]) {
     process.stdout.write(`Transcript: ${data.results[0].alternatives[0].transcript}\n`)
   }
@@ -20,7 +19,7 @@ const options = {
   recordProgram: 'rec', // Try also "arecord" or "sox"
   silence: '0.5',
   threshold: process.argv[3] || '0.01',
-  middleware: [logTranscript],
+  middleware: [],
   request: { // Configuration for a request sent to StreamingRecognize
     config: {
       encoding: 'LINEAR16',
@@ -31,7 +30,95 @@ const options = {
   }
 }
 
-console.log('Configured with:', options)
+options.middleware.push(logTranscript);
+
+// console.log('Configured with:', options)
+
+// Configure Google, and create file to write to
+const google = require('googleapis');
+var key = require('./service-account-key.json');
+var jwtClient = new google.auth.JWT(
+  key.client_email,
+  null,
+  key.private_key,
+  ['https://www.googleapis.com/auth/drive',
+    'https://www.googleapis.com/auth/drive.appdata',
+    'https://www.googleapis.com/auth/drive.apps.readonly',
+    'https://www.googleapis.com/auth/drive.file',
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive.metadata',
+    'https://www.googleapis.com/auth/drive.metadata.readonly',
+    'https://www.googleapis.com/auth/drive.readonly',
+    'https://www.googleapis.com/auth/drive.scripts'
+  ], // an array of auth scopes
+  null
+);
+google.options({
+  auth: jwtClient
+});
+
+const drive = google.drive({ version: 'v3'});
+const sheets = google.sheets('v4');
+const transcriptFile = {};
+sheets.spreadsheets.create({
+  resource: {
+    properties: {
+      title: process.argv[2],
+    }
+  },
+  media: {
+    mimeType: 'text/csv',
+    body: 'Time, Transcript'
+  },
+  fields: '*'
+}, function(err, file) {
+  if (err) {
+    console.log(err, "\nFile id:", transcriptFile.id);
+  } else {
+    console.log('File at:', file);
+    transcriptFile.id = file.spreadsheetId;
+
+    drive.permissions.create({
+      resource: {
+        'type': 'anyone',
+        'role': 'writer',
+      },
+      fileId: file.spreadsheetId,
+    })
+  }
+});
+
+const writeToDrive = function(data, record) {
+  if (data.results[0] && data.results[0].alternatives[0]) {
+    var values = [
+      [
+        new Date().toJSON(),
+        data.results[0].alternatives[0].transcript
+      ],
+    ];
+
+    sheets.spreadsheets.values.append({
+      spreadsheetId: transcriptFile.id,
+      valueInputOption: 'USER_ENTERED',
+      range: 'A1',
+      resource: {
+        values: values
+      }
+    }, function (err, result) {
+      if (err) {
+        console.log(err, "\nFile id:", transcriptFile.id);
+      } else {
+        console.log('%d cells appended.', result.updates.updatedCells);
+      }
+    });  }
+  else {
+    if (record) record.stop();
+    start();
+  }
+};
+
+options.middleware.push(writeToDrive);
+
 const listen = function(options) {
   const record = require('node-record-lpcm16');
 
