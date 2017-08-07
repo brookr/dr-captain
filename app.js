@@ -1,11 +1,10 @@
 // Configure recording
 const logTranscript = function (data, record) {
   if (data.results[0] && data.results[0].alternatives[0]) {
-    process.stdout.write(`Transcript: ${data.results[0].alternatives[0].transcript}\n`)
+    console.log(`Transcript: ${data.results[0].alternatives[0].transcript}\n`)
   }
   else {
-    record.stop();
-    start();
+    record && record.stop();
   }
 };
 
@@ -108,49 +107,44 @@ const writeToDrive = function(data, record) {
       if (err) {
         console.log(err, "\nFile id:", transcriptFile.id);
       } else {
-        console.log('%d cells appended.', result.updates.updatedCells);
+        // console.log('%d cells appended.', result.updates.updatedCells);
       }
     });  }
   else {
-    if (record) record.stop();
-    start();
+    record && record.stop();
   }
 };
 
 options.middleware.push(writeToDrive);
 
+const record = require('node-record-lpcm16');
+
+// Imports the Google Cloud client library
+const Speech = require('@google-cloud/speech');
+
+// Instantiates a client
+const speech = Speech();
+
+// Create a recognize stream
+const recognizeStreamCreate = function () {
+  return speech.streamingRecognize(options.request)
+    .on('error', (err) => {
+      // console.error(err);
+      // console.log("\n\nDisregarding error and restarting stream...\n\n")
+    })
+    .on('data', (data, record) => {
+      options.middleware.forEach(f => f(data, record))
+    });
+}
+
 const listen = function(options) {
-  const record = require('node-record-lpcm16');
-
-  // Imports the Google Cloud client library
-  const Speech = require('@google-cloud/speech');
-
-  // Instantiates a client
-  const speech = Speech();
-
-  // Create a recognize stream
-  const recognizeStreamCreate = function() {
-    return speech.streamingRecognize(options.request)
-      .on('error', (err) => {
-        // console.error(err);
-        // console.log("\n\nDisregarding error and restarting stream...\n\n")
-      })
-      .on('data', (data, record) => {
-        options.middleware.forEach(f => f(data, record))
-      });
-  }
-
   // Start recording and send the microphone input to the Speech API
-  const start = function() {
-    record
-      .start(options)
-      .on('error', console.error)
-      .pipe(recognizeStreamCreate())
-      .on('finish', start);
-    console.log('Listening... (Ctrl+C to stop)');
-  }
-
-  start(); 
+  record
+    .start(options)
+    .on('error', console.error)
+    .pipe(recognizeStreamCreate())
+    .on('end', listen);
+  console.log('Listening... (Ctrl+C to stop)');
 }
 
 // Run it!
